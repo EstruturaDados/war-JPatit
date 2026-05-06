@@ -4,6 +4,7 @@
 #include <time.h>
 
 #define max_territorio 5
+#define total_missoes 5
 
 //definição da struct
 struct Territorio{
@@ -12,10 +13,25 @@ struct Territorio{
     int tropas;
 };
 
+//comando de missoes
+char missoes[total_missoes][100] = {
+    "Conquistar 3 territorios seguidos",
+    "Eliminar todas as tropas da cor vermelha",
+    "Controlar todos os territorios",
+    "Ter pelo menos 10 tropas em um territorio",
+    "Conquistar pelo menos 2 territorios inimigos"
+};
+
 //limpar o buffer de entrada
 void limparBufferEntrada(){
     int c;
     while((c=getchar())!='\n' && c != EOF);
+}
+
+//dar missao ao exercito
+void entregarmissao(char* destino, char missoes[][100], int totalMissoes){
+    int indice = rand() % totalMissoes; // sorteia uma missão
+    strcpy(destino, missoes[indice]);   // copia para o jogador
 }
 
 //simulação de ataque
@@ -23,7 +39,9 @@ void ataque(struct Territorio* atacante, struct Territorio* defensor){
     //impede ataque da mesma cor
     if (strcmp(atacante->cor_exercito, defensor->cor_exercito) == 0){
         printf("Nao pode atacar seu aliado");
+        return;
     }  
+
 //randomiza o numero dos dados 
 int dado1 = rand() % 6 + 1;
 int dado2 = rand() % 6 + 1;
@@ -51,6 +69,47 @@ if(defensor->tropas <= 0){
 } else { printf("Empate\n");
 }}
 
+int verificarMissao(char* missao, struct Territorio* mapa, int tamanho){
+
+// Missão: controlar todos os territorios
+    if (strstr(missao, "Controlar todos os territorios") != NULL){
+        char cor[10];
+        strcpy(cor, mapa[0].cor_exercito);
+
+        for(int i = 1; i < tamanho; i++){
+            if(strcmp(cor, mapa[i].cor_exercito) != 0){
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+// Missão: ter pelo menos 10 tropas em um territorio
+    if (strstr(missao, "10 tropas") != NULL){
+        for(int i = 0; i < tamanho; i++){
+            if(mapa[i].tropas >= 10){
+                return 1;
+            }
+        }
+        return 0;
+    }
+    // Missão: conquistar 2 territorios inimigos (simples)
+    if (strstr(missao, "2 territorios") != NULL){
+        int contador = 0;
+
+        for(int i = 0; i < tamanho; i++){
+            if(mapa[i].tropas > 1){
+                contador++;
+            }
+        }
+        if(contador >= 2){
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
 //função main
 int main(){
 //deixar aleatorio
@@ -58,6 +117,9 @@ int main(){
 
     struct Territorio* pais = malloc(max_territorio *sizeof(struct Territorio));
     int totalterritorio=0;
+
+    char *missaojogador;
+    missaojogador = (char*) malloc(100 * sizeof(char));
 
 //cadastro
 for(int i = 0; i < 5; i++){
@@ -82,6 +144,8 @@ for(int i = 0; i < 5; i++){
     totalterritorio++;
 }
 
+entregarmissao(missaojogador, missoes, total_missoes);
+
 //exibição dos territorios
 printf("Territorios cadastrados:\n\n");
 
@@ -92,6 +156,8 @@ for (int i = 0; i < totalterritorio; i++){
     printf("Numero de Tropas: %d\n", pais[i].tropas);
     printf("\n\n");
 }
+
+printf("Sua missao é: %s \n", missaojogador);
 
 char continuar = 's';
 
@@ -127,6 +193,12 @@ if (atk >= 0 && atk < totalterritorio && def >= 0 && def < totalterritorio && at
     ataque(&pais[atk], &pais[def]);
 } else { printf("Escolha invalida\n");}
 
+//verifica se a missao foi concluida
+if (verificarMissao(missaojogador, pais, totalterritorio)){
+    printf("\n Missao Cumprida! Você venceu!\n");
+    break;
+}
+
 printf("Deseja continuar? (s/n):  \n\n");
 scanf("%c", &continuar);
 limparBufferEntrada();
@@ -144,6 +216,7 @@ for (int i = 0; i < totalterritorio; i++){
 
 //liberação de memoria
 free(pais);
+free(missaojogador);
 
 return 0;
 }
